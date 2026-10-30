@@ -12,6 +12,8 @@ from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from .loss import InfoNCEloss
 
+from thop import profile
+from torchinfo import summary
 
 __all__ = ['DUMIR']
 
@@ -160,7 +162,7 @@ class MINE:
             dataloader = self.eval_dataloader
         elif mode == 'test':
             dataloader = self.test_dataloader
-            self.model = self.early_stopping.best_model
+            # self.model = self.early_stopping.best_model
         elif mode == 'train':
             dataloader = self.train_dataloader
 

@@ -19,7 +19,7 @@ class Param():
         common_parameters = {
             'padding_mode': 'zero',
             'padding_loc': 'end',
-            'need_aligned': True,
+            'need_aligned': True, #True,
             'eval_monitor': 'f1',
             'train_batch_size': 16,
             'eval_batch_size': 8,

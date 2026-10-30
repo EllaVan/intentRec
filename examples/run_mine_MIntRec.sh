@@ -2,7 +2,7 @@
 
 for dataset in 'MIntRec'
 do
-    for seed in 1 0 2 3
+    for seed in 2025 2026
     do
         python run.py \
         --dataset MIntRec \
