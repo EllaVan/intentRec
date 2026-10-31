@@ -51,7 +51,7 @@ class Param():
             lr (float): The learning rate of backbone.
         """
         hyper_parameters = {
-            'num_train_epochs': 100,
+            'num_train_epochs': 100,#00,
             'dst_feature_dims': 360,
             'nheads': 4,
             'n_levels': 4,

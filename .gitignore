@@ -10,6 +10,8 @@ __pycache__/
 .vscode/
 .idea/
 
+examples/
+datasets/
 cache/
 logs/
 models/

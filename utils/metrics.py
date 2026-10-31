@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, classification_report
 import logging
@@ -16,7 +17,7 @@ MIntRec = [
                     'Prevent', 'Greet', 'Ask for help'
         ]
 
-MIntRec2 = [
+MIntRec2_0 = [
             'Acknowledge', 'Advise', 'Agree', 'Apologise', 'Arrange',
             'Ask for help', 'Asking for opinions', 'Care', 'Comfort', 'Complain',
             'Confirm', 'Criticize', 'Doubt', 'Emphasize', 'Explain',
@@ -140,6 +141,7 @@ class Metrics(object):
 
         self.logger = logging.getLogger(args.logger_name)
         self.eval_metrics = ['acc', 'f1',  'prec', 'rec']
+        self.output_path = args.pred_output_path
         self.dataset = args.dataset
 
     def __call__(self, y_true, y_pred, show_results = False):
@@ -181,7 +183,7 @@ class Metrics(object):
     def _show_confusion_matrix(self, y_true, y_pred):
 
         cm = confusion_matrix(y_true, y_pred)
-        report = classification_report(y_true, y_pred, target_names=eval(self.dataset), digits=4)
+        report = classification_report(y_true, y_pred, target_names=eval(self.dataset.replace(".", "_")), digits=4)
 
         self.logger.info("%s", report)
 
@@ -190,7 +192,7 @@ class Metrics(object):
 
         draw_confusion_matrix(label_true=y_true,
                       label_pred=y_pred,
-                      label_name=eval(self.dataset),
+                      label_name=eval(self.dataset.replace(".", "_")),
                       title=self.dataset,
-                      pdf_save_path=self.dataset+".jpg",
+                      pdf_save_path=os.path.join(self.output_path, self.dataset+".jpg"),
                       dpi=600)
