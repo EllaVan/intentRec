@@ -70,8 +70,8 @@ class ContextTemporalGate(nn.Module):
         # self.context_proj = BottleneckMLP(dim, hidden_dim, hidden_dim)
         # self.score = BottleneckMLP(hidden_dim, 1)
         
-        # self.local_global_query = LocalContentAttention(hidden_dim, 4) 
-        
+        self.local_global_query = LocalContentAttention(hidden_dim, 4) # 没用到，但是不写这句结果会降低？可能是和初始化有关
+
     def forward_old(self, feats):
         # feats: [L, N, D]
         L, N, D = feats.shape
@@ -158,9 +158,6 @@ class MINE(nn.Module):
         self.proj_t = nn.Conv1d(self.orig_d_t, self.d_t, kernel_size=args.conv1d_kernel_size_l, padding=0, bias=False)
         self.proj_v = nn.Conv1d(self.orig_d_v, self.d_v, kernel_size=args.conv1d_kernel_size_v, padding=0, bias=False)
         self.proj_a = nn.Conv1d(self.orig_d_a, self.d_a, kernel_size=args.conv1d_kernel_size_a, padding=0, bias=False)
-        # self.proj_t = nn.Linear(self.orig_d_t, self.d_t)
-        # self.proj_v = nn.Linear(self.orig_d_v, self.d_v)
-        # self.proj_a = nn.Linear(self.orig_d_a, self.d_a)
         
         self.pred_t = nn.Linear(self.d_t, self.output_dim)
         self.pred_v = nn.Linear(self.d_v, self.output_dim)
