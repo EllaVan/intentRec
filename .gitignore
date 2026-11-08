@@ -17,4 +17,9 @@ logs/
 models/
 outputs/
 results/
+save/
+*tmp*/
 *.log
+
+*LatexDraft/
+

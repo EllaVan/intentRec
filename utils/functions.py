@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 import numpy as np
 import pandas as pd
@@ -6,6 +7,11 @@ import random
 import logging
 import copy
 from .metrics import Metrics
+
+# method -> backbone source relative to project root
+_BACKBONE_SOURCE_MAP = {
+    'mine': os.path.join('backbones', 'FusionNets', 'MINE.py'),
+}
 
 class EarlyStopping:
     """Early stops the training if validation loss doesn't improve after a given patience."""
@@ -63,6 +69,26 @@ def set_output_path(args):
         os.makedirs(model_path)
 
     return pred_output_path, model_path
+
+
+def save_backbone_source(args, pred_output_path=None):
+    """Copy the fusion backbone source used in this run into the output folder."""
+    rel = _BACKBONE_SOURCE_MAP.get(args.method)
+    if rel is None:
+        return None
+
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    src = os.path.join(project_root, rel)
+    if not os.path.isfile(src):
+        logging.getLogger(args.logger_name).warning(
+            'Backbone source not found, skip copy: %s', src
+        )
+        return None
+
+    out_dir = pred_output_path or args.pred_output_path
+    dst = os.path.join(out_dir, os.path.basename(src))
+    shutil.copy2(src, dst)
+    return dst
 
 def save_npy(npy_file, path, file_name):
     npy_path = os.path.join(path, file_name)

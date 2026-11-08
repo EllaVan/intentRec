@@ -29,8 +29,8 @@ MIntRec2_0 = [
 def draw_confusion_matrix(label_true, label_pred, label_name, title="Confusion Matrix", pdf_save_path=None, dpi=300):
     """
 
-    @param label_true: 真实标签，比如[0,1,2,7,4,5,...]
-    @param label_pred: 预测标签，比如[0,5,4,2,1,4,...]
+    @param label_true: 真实标签，比如[0,1,2,7,4,5,...]，纵坐标为真实标签
+    @param label_pred: 预测标签，比如[0,5,4,2,1,4,...]，横坐标为预测标签
     @param label_name: 标签名字，比如['cat','dog','flower',...]
     @param title: 图标题
     @param pdf_save_path: 是否保存，是则为保存路径pdf_save_path=xxx.png | xxx.pdf | ...等其他plt.savefig支持的保存格式
@@ -144,7 +144,7 @@ class Metrics(object):
         self.output_path = args.pred_output_path
         self.dataset = args.dataset
 
-    def __call__(self, y_true, y_pred, show_results = False):
+    def __call__(self, y_true, y_pred, show_results = False, show_matrix=True):
 
         acc_score = self._acc_score(y_true, y_pred)
         macro_f1 = self._f1_score(y_true, y_pred)
@@ -160,7 +160,8 @@ class Metrics(object):
 
         if show_results:
 
-            self._show_confusion_matrix(y_true, y_pred)
+            if show_matrix:
+                self._show_confusion_matrix(y_true, y_pred)
 
             self.logger.info("***** Evaluation results *****")
             for key in sorted(eval_results.keys()):

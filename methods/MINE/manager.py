@@ -53,7 +53,7 @@ class MINE:
         self.early_stopping = EarlyStopping(args)
 
         for epoch in trange(int(args.num_train_epochs), desc="Epoch",
-                            bar_format='{desc}: {percentage:3.0f}%|{bar:50}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]'):
+                            bar_format='{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]'):
             total_labels = torch.empty(0,dtype=torch.long).to(self.device)
             total_logits = torch.empty((0, args.num_labels)).to(self.device)
             total_preds = torch.empty(0,dtype=torch.long).to(self.device)
@@ -61,7 +61,7 @@ class MINE:
             loss_record = AverageMeter()
 
             pbar = tqdm(self.train_dataloader, desc="Iteration", 
-                        bar_format='{desc}: {percentage:3.0f}%|{bar:50}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]')
+                        bar_format='{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]')
             for step, batch in enumerate(pbar):
 
                 text_feats = batch['text_feats'].to(self.device)
@@ -144,6 +144,11 @@ class MINE:
                 self.logger.info("  %s = %s", key, str(eval_results[key]))
 
             self.early_stopping(eval_score, self.model)
+            
+            # # test
+            # self.logger.info("***** Epoch: %s: Test results *****", str(epoch + 1))
+            # test_results = self._get_outputs(args, mode = 'test', show_results=True, show_matrix=False)
+            # self.logger.info("***** Epoch: %s: Test End *****", str(epoch + 1))
 
             if self.early_stopping.early_stop:
                 self.logger.info(f'EarlyStopping at epoch {epoch + 1}')
@@ -156,7 +161,7 @@ class MINE:
             self.logger.info('Trained models are saved in %s', args.model_output_path)
             save_model(self.model, args.model_output_path)
 
-    def _get_outputs(self, args, mode = 'eval', return_sample_results = False, show_results = False):
+    def _get_outputs(self, args, mode = 'eval', return_sample_results = False, show_results = False, show_matrix=False):
 
         if mode == 'eval':
             dataloader = self.eval_dataloader
@@ -178,7 +183,9 @@ class MINE:
         cons_loss_record = AverageMeter()
 
 
-        for batch in tqdm(dataloader, desc="Iteration"):
+        for batch in tqdm(dataloader, desc="Iteration", leave=False,
+                  bar_format='{desc}: {percentage:3.0f}%|{bar:30}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]'):
+
 
             text_feats = batch['text_feats'].to(self.device)
             video_feats = batch['video_feats'].to(self.device)
@@ -221,7 +228,7 @@ class MINE:
         y_true = total_labels.cpu().numpy()
         y_feat = total_features.cpu().numpy()
 
-        outputs = self.metrics(y_true, y_pred, show_results=show_results)
+        outputs = self.metrics(y_true, y_pred, show_results=show_results, show_matrix=show_matrix)
         outputs.update({'loss': loss_record.avg})
         outputs.update({'cls_loss': cls_loss_record.avg})
         outputs.update({'cons_loss': cons_loss_record.avg})
@@ -241,7 +248,7 @@ class MINE:
 
     def _test(self, args):
 
-        test_results = self._get_outputs(args, mode = 'test', return_sample_results = True, show_results = True)
+        test_results = self._get_outputs(args, mode = 'test', return_sample_results = True, show_results = True, show_matrix=True)
         test_results['best_eval_score'] = round(self.best_eval_score, 4)
 
         return test_results

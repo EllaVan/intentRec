@@ -7,7 +7,7 @@ import warnings
 
 from configs.base import ParamManager
 from data.base import DataManager
-from utils.functions import set_torch_seed, save_results, set_output_path
+from utils.functions import set_torch_seed, save_results, set_output_path, save_backbone_source
 from methods import method_map
 from backbones.base import ModelManager
 
@@ -86,6 +86,9 @@ def set_logger(args):
 def run(args, debug_args=None):
     logger = set_logger(args)
     args.pred_output_path, args.model_output_path = set_output_path(args)
+    backbone_src = save_backbone_source(args)
+    if backbone_src is not None:
+        logger.info('Backbone source saved to %s', backbone_src)
     set_torch_seed(args.seed)
 
     # Log the parameters
