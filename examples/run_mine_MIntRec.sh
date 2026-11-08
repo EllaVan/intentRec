@@ -2,7 +2,7 @@
 
 for dataset in 'MIntRec'
 do
-    for seed in 2025 2 1
+    for seed in 0 1
     do
         python run.py \
         --dataset MIntRec \
@@ -14,7 +14,7 @@ do
         --save_model \
         --save_results \
         --seed $seed \
-        --gpu_id '0' \
+        --gpu_id '1' \
         --video_feats_path 'video_feats_swin.pkl' \
         --audio_feats_path 'audio_feats.pkl' \
         --text_backbone '/media/data2/wf/intentRec/materials/bert-large-uncased' \

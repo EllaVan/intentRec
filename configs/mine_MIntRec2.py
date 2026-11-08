@@ -72,6 +72,10 @@ class Param():
             'temperature':0.05,
             'label_smoothing':0.00,
             'lambc':0.03,
-            'lamba':0.8
+            'lamba':0.8,
+            'use_shared_private': False,
+            'sp_dropout': 0.2,
+            'diff_weight': 0.1,
+            'sim_weight': 0.1,
         }
         return hyper_parameters

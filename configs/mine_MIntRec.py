@@ -68,11 +68,16 @@ class Param():
             'conv1d_kernel_size_l': 1,#5,
             'conv1d_kernel_size_v': 1,
             'conv1d_kernel_size_a': 1,
-            'lr': 0.00001, #0.00003,
+            'lr': 0.00003, #0.00003,
             'temperature':0.05,
             'label_smoothing':0.02,
             'lambc':0.03,
             'lamba':0.8,
+            # CDPR-style shared/private separation (False keeps original MINE path)
+            'use_shared_private': True,
+            'sp_dropout': 0.2,
+            'diff_weight': 0.1,
+            'sim_weight': 0.1,
 
         }
         return hyper_parameters

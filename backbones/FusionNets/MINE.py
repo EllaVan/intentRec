@@ -70,8 +70,8 @@ class ContextTemporalGate(nn.Module):
         # self.context_proj = BottleneckMLP(dim, hidden_dim, hidden_dim)
         # self.score = BottleneckMLP(hidden_dim, 1)
         
-        # self.local_global_query = LocalContentAttention(hidden_dim, 4) 
-        
+        # self.local_global_query = LocalContentAttention(hidden_dim, 4) # 没用到，但是不写这句结果会降低？可能是和初始化有关
+
     def forward_old(self, feats):
         # feats: [L, N, D]
         L, N, D = feats.shape
@@ -158,9 +158,6 @@ class MINE(nn.Module):
         self.proj_t = nn.Conv1d(self.orig_d_t, self.d_t, kernel_size=args.conv1d_kernel_size_l, padding=0, bias=False)
         self.proj_v = nn.Conv1d(self.orig_d_v, self.d_v, kernel_size=args.conv1d_kernel_size_v, padding=0, bias=False)
         self.proj_a = nn.Conv1d(self.orig_d_a, self.d_a, kernel_size=args.conv1d_kernel_size_a, padding=0, bias=False)
-        # self.proj_t = nn.Linear(self.orig_d_t, self.d_t)
-        # self.proj_v = nn.Linear(self.orig_d_v, self.d_v)
-        # self.proj_a = nn.Linear(self.orig_d_a, self.d_a)
         
         self.pred_t = nn.Linear(self.d_t, self.output_dim)
         self.pred_v = nn.Linear(self.d_v, self.output_dim)
@@ -171,6 +168,15 @@ class MINE(nn.Module):
         self.la_t = ContextTemporalGate(self.d_t)
         self.la_v = ContextTemporalGate(self.d_v)
         self.la_a = ContextTemporalGate(self.d_a)
+
+        # CDPR-style shared / private feature separation (optional)
+        self.use_shared_private = getattr(args, 'use_shared_private', False)
+        if self.use_shared_private:
+            sp_dropout = getattr(args, 'sp_dropout', self.output_dropout)
+            self.shared = nn.Sequential(nn.Linear(dst_feature_dims, dst_feature_dims),nn.ReLU(),nn.Dropout(sp_dropout),)
+            self.privatized_t = nn.Sequential(nn.Linear(self.d_t, self.d_t),nn.ReLU(),nn.Dropout(sp_dropout),)
+            self.privatized_v = nn.Sequential(nn.Linear(self.d_v, self.d_v),nn.ReLU(),nn.Dropout(sp_dropout),)
+            self.privatized_a = nn.Sequential(nn.Linear(self.d_a, self.d_a),nn.ReLU(),nn.Dropout(sp_dropout),)
         
         # init_scale = getattr(self.args, "evidence_scale", 0.1)
         # self.log_evidence_scale = nn.Parameter(torch.tensor(float(torch.log(torch.tensor(init_scale))))) # 优化 log(scale)，前向取exp
@@ -216,10 +222,24 @@ class MINE(nn.Module):
         h_v_pooled = h_v.mean(dim=0)  # [N, D]
         h_a_pooled = h_a.mean(dim=0)  # [N, D]
 
+        # Optional CDPR-style shared / private split on pooled features
+        shared_t = shared_v = shared_a = None
+        private_t = private_v = private_a = None
+        feat_t_use, feat_v_use, feat_a_use = h_t_pooled, h_v_pooled, h_a_pooled
+        if self.use_shared_private:
+            shared_t = self.shared(h_t_pooled)
+            shared_v = self.shared(h_v_pooled)
+            shared_a = self.shared(h_a_pooled)
+            private_t = self.privatized_t(h_t_pooled)
+            private_v = self.privatized_v(h_v_pooled)
+            private_a = self.privatized_a(h_a_pooled)
+            # unimodal / fusion heads consume private features (as in CDPR)
+            feat_t_use, feat_v_use, feat_a_use = private_t, private_v, private_a
+
         # 2. 样本级单模态 logits
-        logits_t = self.pred_t(h_t_pooled)  # [N, C]
-        logits_v = self.pred_v(h_v_pooled)  # [N, C]
-        logits_a = self.pred_a(h_a_pooled)  # [N, C]
+        logits_t = self.pred_t(feat_t_use)  # [N, C]
+        logits_v = self.pred_v(feat_v_use)  # [N, C]
+        logits_a = self.pred_a(feat_a_use)  # [N, C]
 
         # 3. 将 [N, C] 临时扩展为 [1, N, C]，
         # 复用已有 JSD 函数，得到样本级分歧 [N]
@@ -262,9 +282,9 @@ class MINE(nn.Module):
 
         # 6. 样本级特征融合
         feat_fusion = (
-            r_t.unsqueeze(-1) * h_t_pooled
-            + r_v.unsqueeze(-1) * h_v_pooled
-            + r_a.unsqueeze(-1) * h_a_pooled
+            r_t.unsqueeze(-1) * feat_t_use
+            + r_v.unsqueeze(-1) * feat_v_use
+            + r_a.unsqueeze(-1) * feat_a_use
         )  # [N, D]
 
         logits_joint = self.pred_fusion(feat_fusion)  # [N, C]
@@ -276,9 +296,9 @@ class MINE(nn.Module):
         logits_fusion = 0.5 * logits_joint + 0.5 * (e_t + e_v + e_a)  # [N, C]
 
         res = {
-            "feat_t": h_t_pooled,
-            "feat_v": h_v_pooled,
-            "feat_a": h_a_pooled,
+            "feat_t": feat_t_use,
+            "feat_v": feat_v_use,
+            "feat_a": feat_a_use,
             "feat_fusion": feat_fusion,
             "logits_t": logits_t,
             "logits_v": logits_v,
@@ -294,6 +314,15 @@ class MINE(nn.Module):
             "energy_v": E_v,
             "energy_a": E_a,
         }
+        if self.use_shared_private:
+            res.update({
+                "shared_t": shared_t,
+                "shared_v": shared_v,
+                "shared_a": shared_a,
+                "private_t": private_t,
+                "private_v": private_v,
+                "private_a": private_a,
+            })
 
         return res
     
