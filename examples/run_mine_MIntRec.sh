@@ -2,7 +2,7 @@
 
 for dataset in 'MIntRec'
 do
-    for seed in 0 1
+    for seed in 1 2 2025 2026 0
     do
         python run.py \
         --dataset MIntRec \
@@ -19,6 +19,6 @@ do
         --audio_feats_path 'audio_feats.pkl' \
         --text_backbone '/media/data2/wf/intentRec/materials/bert-large-uncased' \
         --config_file_name 'mine_MIntRec' \
-        --results_file_name 'mine_MIntRec.csv'
+        --results_file_name 'mine_MIntRec_rel_v3.csv'
     done
 done

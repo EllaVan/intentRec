@@ -46,6 +46,14 @@ class EarlyStopping:
             if self.counter >= self.patience:
                 self.early_stop = True
 
+    def reset(self, keep_best_model=False):
+        """Restart patience (e.g. after relation β warmup ends)."""
+        self.counter = 0
+        self.early_stop = False
+        self.best_score = 1e8 if self.monitor == 'loss' else 1e-6
+        if not keep_best_model:
+            self.best_model = None
+
 def set_torch_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -88,6 +96,15 @@ def save_backbone_source(args, pred_output_path=None):
     out_dir = pred_output_path or args.pred_output_path
     dst = os.path.join(out_dir, os.path.basename(src))
     shutil.copy2(src, dst)
+    # Also snapshot train loop for mine (loss terms affect v1.3 parity).
+    if args.method == 'mine':
+        manager_src = os.path.join(project_root, 'methods', 'MINE', 'manager.py')
+        if os.path.isfile(manager_src):
+            shutil.copy2(manager_src, os.path.join(out_dir, os.path.basename(manager_src)))
+        else:
+            logging.getLogger(args.logger_name).warning(
+                'Manager source not found, skip copy: %s', manager_src
+            )
     return dst
 
 def save_npy(npy_file, path, file_name):

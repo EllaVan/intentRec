@@ -20,10 +20,10 @@ class MIA(nn.Module):
         self.config = MIAConfig(**dict(args))
         self.model = fusion_method(args)
 
-    def forward(self, text_feats, video_feats, audio_feats):
+    def forward(self, text_feats, video_feats, audio_feats, label_ids=None):
 
         video_feats, audio_feats = video_feats.float(), audio_feats.float()
-        mm_model = self.model(text_feats, video_feats, audio_feats)
+        mm_model = self.model(text_feats, video_feats, audio_feats, label_ids=label_ids)
 
         return mm_model
 
