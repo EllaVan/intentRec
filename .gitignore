@@ -9,6 +9,8 @@ __pycache__/
 *.so
 .vscode/
 .idea/
+*designDoc/
+pre_*.py
 
 examples/
 datasets/
